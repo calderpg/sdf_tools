@@ -107,7 +107,7 @@ void test_compute_convex_segments(
       {
         const Eigen::Vector4d location
             = maxima_map.GridIndexToLocation(x_idx, y_idx, z_idx);
-        const Eigen::Vector3d extrema = maxima_map.GetImmutable(x_idx, y_idx, z_idx).first;
+        const Eigen::Vector3d extrema = maxima_map.GetImmutable(x_idx, y_idx, z_idx).Value();
         if (!std::isinf(extrema.x())
             && !std::isinf(extrema.y())
             && !std::isinf(extrema.z()))
@@ -150,9 +150,9 @@ void test_compute_convex_segments(
   std::cout << "(0,0,0) " << PrettyPrint::PrettyPrint(virtual_border_sdf.GetAutoDiffGradient((int64_t)0, (int64_t)0, (int64_t)0)) << std::endl;
   std::cout << "(1,1,1) " << PrettyPrint::PrettyPrint(virtual_border_sdf.GetAutoDiffGradient((int64_t)1, (int64_t)1, (int64_t)1)) << std::endl;
   std::cout << "(2,2,2) " << PrettyPrint::PrettyPrint(virtual_border_sdf.GetAutoDiffGradient((int64_t)2, (int64_t)2, (int64_t)2)) << std::endl;
-  std::cout << "(0,0,0) " << PrettyPrint::PrettyPrint(maxima_map.GetImmutable((int64_t)0, (int64_t)0, (int64_t)0).first) << std::endl;
-  std::cout << "(1,1,1) " << PrettyPrint::PrettyPrint(maxima_map.GetImmutable((int64_t)1, (int64_t)1, (int64_t)1).first) << std::endl;
-  std::cout << "(2,2,2) " << PrettyPrint::PrettyPrint(maxima_map.GetImmutable((int64_t)2, (int64_t)2, (int64_t)2).first) << std::endl;
+  std::cout << "(0,0,0) " << PrettyPrint::PrettyPrint(maxima_map.GetImmutable((int64_t)0, (int64_t)0, (int64_t)0).Value()) << std::endl;
+  std::cout << "(1,1,1) " << PrettyPrint::PrettyPrint(maxima_map.GetImmutable((int64_t)1, (int64_t)1, (int64_t)1).Value()) << std::endl;
+  std::cout << "(2,2,2) " << PrettyPrint::PrettyPrint(maxima_map.GetImmutable((int64_t)2, (int64_t)2, (int64_t)2).Value()) << std::endl;
   display_fn(display_markers);
 }
 

@@ -65,14 +65,22 @@ int main(int argc, char** argv)
     int64_t x_index = 10;
     int64_t y_index = 10;
     int64_t z_index = 10;
-    std::pair<sdf_tools::COLLISION_CELL, bool> index_query = collision_map.GetImmutable(x_index, y_index, z_index);
-    std::cout << "Index query result - stored value " << index_query.first.occupancy << " (occupancy) " << index_query.first.component << " (component) was it in the grid? - " << index_query.second << std::endl;
+    const auto index_query = collision_map.GetImmutable(x_index, y_index, z_index);
+    // Is it in the grid?
+    if (index_query)
+    {
+      std::cout << "Index query result - stored value " << index_query.Value().occupancy << " (occupancy) " << index_query.Value().component << " (component)" << std::endl;
+    }
     // Or we can query by location
     double x_location = 0.0;
     double y_location = 0.0;
     double z_location = 0.0;
-    std::pair<sdf_tools::COLLISION_CELL, bool> location_query = collision_map.GetImmutable(x_location, y_location, z_location);
-    std::cout << "Location query result - stored value " << location_query.first.occupancy << " (occupancy) " << location_query.first.component << " (component) was it in the grid? - " << location_query.second << std::endl;
+    const auto location_query = collision_map.GetImmutable(x_location, y_location, z_location);
+    // Is it in the grid?
+    if (location_query)
+    {
+      std::cout << "Location query result - stored value " << location_query.Value().occupancy << " (occupancy) " << location_query.Value().component << " (component)" << std::endl;
+    }
     // Let's compute connected components
     uint32_t num_connected_components = collision_map.UpdateConnectedComponents();
     std::cout << " There are " << num_connected_components << " connected components in the grid" << std::endl;
@@ -134,10 +142,17 @@ int main(int argc, char** argv)
     // We lock the SDF to prevent unintended changes that would invalidate it
     sdf.Lock();
     // Let's get some values
-    std::pair<float, bool> index_sdf_query = sdf.GetImmutable(x_index, y_index, z_index);
-    std::cout << "Index query result - stored distance " << index_sdf_query.first << " was it in the grid? - " << index_sdf_query.second << std::endl;
-    std::pair<float, bool> location_sdf_query = sdf.GetImmutable(x_location, y_location, z_location);
-    std::cout << "Location query result - stored distance " << location_sdf_query.first << " was it in the grid? - " << location_sdf_query.second << std::endl;
+    const auto index_sdf_query = sdf.GetImmutable(x_index, y_index, z_index);
+    // Is it in the grid?
+    if (index_sdf_query)
+    {
+      std::cout << "Index query result - stored distance " << index_sdf_query.Value() << std::endl;
+    }
+    const auto location_sdf_query = sdf.GetImmutable(x_location, y_location, z_location);
+    if (location_sdf_query)
+    {
+      std::cout << "Location query result - stored distance " << location_sdf_query.Value() << std::endl;
+    }
     // Let's get some gradients
     std::vector<double> index_gradient_query = sdf.GetGradient(x_index, y_index, z_index, true); // Usually, you want to enable 'edge gradients' i.e. gradients for cells on the edge of the grid that don't have 6 neighbors
     std::cout << "Index gradient query result - gradient " << PrettyPrint::PrettyPrint(index_gradient_query) << std::endl;

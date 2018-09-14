@@ -330,7 +330,7 @@ VoxelGrid::VoxelGrid<uint8_t> SDF_Builder::UpdateCollisionMapFromPlanningScene()
 SignedDistanceField SDF_Builder::UpdateSDFFromPlanningScene()
 {
     // Make a temporary grid to perform index<->location mapping
-    const VoxelGrid::VoxelGrid<uint8_t> temp_grid(origin_transform_, resolution_, x_size_, y_size_, z_size_, OOB_value_);
+    const VoxelGrid::VoxelGrid<uint8_t> temp_grid(origin_transform_, resolution_, x_size_, y_size_, z_size_, 0x00);
     const std::string x_joint("virtual_x");
     const std::string y_joint("virtual_y");
     const std::string z_joint("virtual_z");

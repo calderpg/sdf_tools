@@ -348,11 +348,9 @@ uint32_t TaggedObjectCollisionMapGrid::UpdateConnectedComponents()
   const std::function<bool(const GRID_INDEX&, const GRID_INDEX&)>
     are_connected_fn = [&] (const GRID_INDEX& index1, const GRID_INDEX& index2)
   {
-    auto query1 = GetImmutable(index1);
-    auto query2 = GetImmutable(index2);
-    assert(query1.second);
-    assert(query2.second);
-    if ((query1.first.occupancy > 0.5) == (query2.first.occupancy > 0.5))
+    const auto query1 = GetImmutable(index1);
+    const auto query2 = GetImmutable(index2);
+    if ((query1.Value().occupancy > 0.5) == (query2.Value().occupancy > 0.5))
     {
       return true;
     }
@@ -364,10 +362,10 @@ uint32_t TaggedObjectCollisionMapGrid::UpdateConnectedComponents()
   const std::function<int64_t(const GRID_INDEX&)> get_component_fn
       = [&] (const GRID_INDEX& index)
   {
-    auto query = GetImmutable(index);
-    if (query.second)
+    const auto query = GetImmutable(index);
+    if (query)
     {
-      return (int64_t)query.first.component;
+      return (int64_t)query.Value().component;
     }
     else
     {
@@ -378,12 +376,11 @@ uint32_t TaggedObjectCollisionMapGrid::UpdateConnectedComponents()
       = [&] (const GRID_INDEX& index, const uint32_t component)
   {
     auto query = GetMutable(index);
-    if (query.second)
+    if (query)
     {
-      SetValue(index, TAGGED_OBJECT_COLLISION_CELL(query.first.occupancy,
-                                                   query.first.object_id,
-                                                   component,
-                                                   query.first.convex_segment));
+      SetValue(index, TAGGED_OBJECT_COLLISION_CELL(
+                 query.Value().occupancy, query.Value().object_id, component,
+                 query.Value().convex_segment));
     }
   };
   number_of_components_
@@ -410,7 +407,7 @@ TaggedObjectCollisionMapGrid::Resample(const double new_resolution) const
       for (int64_t z_index = 0; z_index < GetNumZCells(); z_index++)
       {
         const TAGGED_OBJECT_COLLISION_CELL& current_cell
-            = GetImmutable(x_index, y_index, z_index).first;
+            = GetImmutable(x_index, y_index, z_index).Value();
         const Eigen::Vector4d current_cell_location
             = GridIndexToLocation(x_index, y_index, z_index);
         resampled.SetValue4d(current_cell_location, current_cell);
@@ -435,10 +432,10 @@ TaggedObjectCollisionMapGrid::ComputeComponentTopology(
   const std::function<int64_t(const GRID_INDEX&)> get_component_fn
       = [&] (const GRID_INDEX& index)
   {
-    auto query = GetImmutable(index);
-    if (query.second)
+    const auto query = GetImmutable(index);
+    if (query)
     {
-        return (int64_t)query.first.component;
+        return (int64_t)query.Value().component;
     }
     else
     {
@@ -449,7 +446,7 @@ TaggedObjectCollisionMapGrid::ComputeComponentTopology(
       = [&] (const GRID_INDEX& index)
   {
     const TAGGED_OBJECT_COLLISION_CELL& current_cell
-        = GetImmutable(index).first;
+        = GetImmutable(index).Value();
     if (current_cell.occupancy > 0.5)
     {
       if ((component_types_to_use & FILLED_COMPONENTS) > 0x00)
@@ -496,10 +493,10 @@ TaggedObjectCollisionMapGrid::ExtractComponentSurfaces(
   const std::function<int64_t(const GRID_INDEX&)> get_component_fn
       = [&] (const GRID_INDEX& index)
   {
-    auto query = GetImmutable(index);
-    if (query.second)
+    const auto query = GetImmutable(index);
+    if (query)
     {
-      return (int64_t)query.first.component;
+      return (int64_t)query.Value().component;
     }
     else
     {
@@ -510,7 +507,7 @@ TaggedObjectCollisionMapGrid::ExtractComponentSurfaces(
       = [&] (const GRID_INDEX& index)
   {
     const TAGGED_OBJECT_COLLISION_CELL& current_cell
-        = GetImmutable(index).first;
+        = GetImmutable(index).Value();
     if (current_cell.occupancy > 0.5)
     {
       if ((component_types_to_extract & FILLED_COMPONENTS) > 0x00)
@@ -571,18 +568,14 @@ uint32_t TaggedObjectCollisionMapGrid::UpdateConvexSegments(
     are_connected_fn
       = [&] (const GRID_INDEX& index1, const GRID_INDEX& index2)
   {
-    auto query1 = GetImmutable(index1);
-    auto query2 = GetImmutable(index2);
-    assert(query1.second);
-    assert(query2.second);
-    if (query1.first.object_id == query2.first.object_id)
+    const auto query1 = GetImmutable(index1);
+    const auto query2 = GetImmutable(index2);
+    if (query1.Value().object_id == query2.Value().object_id)
     {
-      auto exmap_query1 = extrema_map.GetImmutable(index1);
-      auto examp_query2 = extrema_map.GetImmutable(index2);
-      assert(exmap_query1.second);
-      assert(examp_query2.second);
+      const auto exmap_query1 = extrema_map.GetImmutable(index1);
+      const auto examp_query2 = extrema_map.GetImmutable(index2);
       const double maxima_distance
-          = (exmap_query1.first - examp_query2.first).norm();
+          = (exmap_query1.Value() - examp_query2.Value()).norm();
       if (maxima_distance < connected_threshold)
       {
         return true;
@@ -600,18 +593,18 @@ uint32_t TaggedObjectCollisionMapGrid::UpdateConvexSegments(
   const std::function<int64_t(const GRID_INDEX&)> get_component_fn
       = [&] (const GRID_INDEX& index)
   {
-    auto query = GetImmutable(index);
-    auto extrema_query = extrema_map.GetImmutable(index);
-    if (query.second)
+    const auto query = GetImmutable(index);
+    const auto extrema_query = extrema_map.GetImmutable(index);
+    if (query)
     {
-      if ((query.first.occupancy < 0.5f) || (query.first.object_id > 0u))
+      if ((query.Value().occupancy < 0.5f) || (query.Value().object_id > 0u))
       {
-        const Eigen::Vector3d& extrema = extrema_query.first;
+        const Eigen::Vector3d& extrema = extrema_query.Value();
         if (!std::isinf(extrema.x())
             && !std::isinf(extrema.y())
             && !std::isinf(extrema.z()))
         {
-          return (int64_t)query.first.convex_segment;
+          return (int64_t)query.Value().convex_segment;
         }
         else
         {
@@ -635,11 +628,11 @@ uint32_t TaggedObjectCollisionMapGrid::UpdateConvexSegments(
       = [&] (const GRID_INDEX& index, const uint32_t component)
   {
     auto query = GetMutable(index);
-    if (query.second)
+    if (query)
     {
-      SetValue(index, TAGGED_OBJECT_COLLISION_CELL(query.first.occupancy,
-                                                   query.first.object_id,
-                                                   query.first.component,
+      SetValue(index, TAGGED_OBJECT_COLLISION_CELL(query.Value().occupancy,
+                                                   query.Value().object_id,
+                                                   query.Value().component,
                                                    component));
     }
   };
@@ -690,7 +683,7 @@ visualization_msgs::Marker TaggedObjectCollisionMapGrid::ExportForDisplay(
         new_point.y = location(1);
         new_point.z = location(2);
         const TAGGED_OBJECT_COLLISION_CELL& current_cell
-            = GetImmutable(x_index, y_index, z_index).first;
+            = GetImmutable(x_index, y_index, z_index).Value();
         const auto draw_found_itr
             = objects_to_draw_map.find(current_cell.object_id);
         if (draw_found_itr != objects_to_draw_map.end()
@@ -743,7 +736,7 @@ visualization_msgs::Marker TaggedObjectCollisionMapGrid::ExportForDisplay(
         new_point.y = location(1);
         new_point.z = location(2);
         const TAGGED_OBJECT_COLLISION_CELL& current_cell
-            = GetImmutable(x_index, y_index, z_index).first;
+            = GetImmutable(x_index, y_index, z_index).Value();
         // Check if we've been given a color to work with
         auto found_itr = object_color_map.find(current_cell.object_id);
         std_msgs::ColorRGBA object_color;
@@ -810,7 +803,7 @@ TaggedObjectCollisionMapGrid::ExportContourOnlyForDisplay(
         new_point.y = location(1);
         new_point.z = location(2);
         const TAGGED_OBJECT_COLLISION_CELL& current_cell
-            = GetImmutable(x_index, y_index, z_index).first;
+            = GetImmutable(x_index, y_index, z_index).Value();
         // Get the SDF for the current object
         auto sdf_found_itr = per_object_sdfs.find(current_cell.object_id);
         if (sdf_found_itr != per_object_sdfs.end())
@@ -820,7 +813,7 @@ TaggedObjectCollisionMapGrid::ExportContourOnlyForDisplay(
           const float distance
               = object_sdf.GetImmutable(new_point.x,
                                         new_point.y,
-                                        new_point.z).first;
+                                        new_point.z).Value();
           // Check if we're on the surface of the object
           if (distance < 0.0 && distance > -GetResolution())
           {
@@ -882,7 +875,7 @@ TaggedObjectCollisionMapGrid::ExportContourOnlyForDisplay(
         new_point.y = location(1);
         new_point.z = location(2);
         const TAGGED_OBJECT_COLLISION_CELL& current_cell
-            = GetImmutable(x_index, y_index, z_index).first;
+            = GetImmutable(x_index, y_index, z_index).Value();
         // Get the SDF for the current object
         auto sdf_found_itr = per_object_sdfs.find(current_cell.object_id);
         if (sdf_found_itr != per_object_sdfs.end())
@@ -892,7 +885,7 @@ TaggedObjectCollisionMapGrid::ExportContourOnlyForDisplay(
           const float distance
               = object_sdf.GetImmutable(new_point.x,
                                         new_point.y,
-                                        new_point.z).first;
+                                        new_point.z).Value();
           // Check if we're on the surface of the object
           if (distance < 0.0 && distance > -GetResolution())
           {
@@ -955,7 +948,9 @@ TaggedObjectCollisionMapGrid::ExportForDisplayOccupancyOnly(
         new_point.x = location(0);
         new_point.y = location(1);
         new_point.z = location(2);
-        if (GetImmutable(x_index, y_index, z_index).first.occupancy > 0.5)
+        const float occupancy =
+            GetImmutable(x_index, y_index, z_index).Value().occupancy;
+        if (occupancy > 0.5)
         {
           if (collision_color.a > 0.0)
           {
@@ -963,7 +958,7 @@ TaggedObjectCollisionMapGrid::ExportForDisplayOccupancyOnly(
             display_rep.colors.push_back(collision_color);
           }
         }
-        else if (GetImmutable(x_index, y_index, z_index).first.occupancy < 0.5)
+        else if (occupancy < 0.5)
         {
           if (free_color.a > 0.0)
           {
@@ -1020,7 +1015,7 @@ TaggedObjectCollisionMapGrid::ExportConnectedComponentsForDisplay(
         new_point.z = location(2);
         display_rep.points.push_back(new_point);
         const TAGGED_OBJECT_COLLISION_CELL& current_cell
-            = GetImmutable(x_index, y_index, z_index).first;
+            = GetImmutable(x_index, y_index, z_index).Value();
         if (current_cell.occupancy != 0.5)
         {
           std_msgs::ColorRGBA color
@@ -1082,7 +1077,7 @@ TaggedObjectCollisionMapGrid::ExportConvexSegmentForDisplay(
       for (int64_t z_index = 0; z_index < GetNumZCells(); z_index++)
       {
         const TAGGED_OBJECT_COLLISION_CELL& current_cell
-            = GetImmutable(x_index, y_index, z_index).first;
+            = GetImmutable(x_index, y_index, z_index).Value();
         if ((current_cell.object_id == object_id)
             && (current_cell.convex_segment == convex_segment))
         {

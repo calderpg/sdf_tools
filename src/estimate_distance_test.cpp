@@ -10,7 +10,7 @@ void test_estimate_distance(
     const std::function<void(
       const visualization_msgs::MarkerArray&)>& display_fn)
 {
-  const double res = 1.0;
+  const double res = 0.125; //1.0;
   const double size = 10.0;
   const Eigen::Isometry3d origin_transform
       = Eigen::Translation3d(0.0, 0.0, 0.0) * Eigen::Quaterniond(
@@ -31,6 +31,10 @@ void test_estimate_distance(
   const std_msgs::ColorRGBA free_color = arc_helpers::RGBAColorBuilder<std_msgs::ColorRGBA>::MakeFromFloatColors(0.0, 0.0, 0.0, 0.0);
   const std_msgs::ColorRGBA unknown_color = arc_helpers::RGBAColorBuilder<std_msgs::ColorRGBA>::MakeFromFloatColors(0.0, 0.0, 0.0, 0.0);
   const auto map_marker = map.ExportForDisplay(collision_color, free_color, unknown_color);
+  for (int i = 0; i < 10; i++)
+  {
+    map.ExtractSignedDistanceField(1e6, true, false).first;
+  }
   const auto sdf = map.ExtractSignedDistanceField(1e6, true, false).first;
   const auto sdf_marker = sdf.ExportForDisplay(0.05f);
   // Assemble a visualization_markers::Marker representation of the SDF to display in RViz

@@ -314,8 +314,9 @@ ExtractComponentSurfaces(
         const GRID_INDEX current_index(x_index, y_index, z_index);
         if (is_surface_index_fn(current_index))
         {
-          component_surfaces[get_component_fn(current_index)][current_index]
-              = 1;
+          const uint32_t current_component =
+              (uint32_t)get_component_fn(current_index);
+          component_surfaces[current_component][current_index] = 1;
         }
       }
     }

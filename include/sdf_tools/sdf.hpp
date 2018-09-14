@@ -136,202 +136,14 @@ public:
    * SignedDistanceField::Lock() on the SDF
    */
 
-  virtual std::pair<float&, bool> GetMutable3d(
-      const Eigen::Vector3d& location)
+  virtual bool OnMutableAccess(const int64_t x_index,
+                               const int64_t y_index,
+                               const int64_t z_index) const
   {
-    const GRID_INDEX index = LocationToGridIndex3d(location);
-    if (IndexInBounds(index))
-    {
-      return GetMutable(index);
-    }
-    else
-    {
-      return std::pair<float&, bool>(oob_value_, false);
-    }
-  }
-
-  virtual std::pair<float&, bool> GetMutable4d(
-      const Eigen::Vector4d& location)
-  {
-    const GRID_INDEX index = LocationToGridIndex4d(location);
-    if (IndexInBounds(index))
-    {
-      return GetMutable(index);
-    }
-    else
-    {
-      return std::pair<float&, bool>(oob_value_, false);
-    }
-  }
-
-  virtual std::pair<float&, bool> GetMutable(const double x,
-                                             const double y,
-                                             const double z)
-  {
-    const Eigen::Vector4d location(x, y, z, 1.0);
-    return GetMutable4d(location);
-  }
-
-  virtual std::pair<float&, bool> GetMutable(const GRID_INDEX& index)
-  {
-    if (IndexInBounds(index) && !locked_)
-    {
-      return std::pair<float&, bool>(
-            AccessIndex(GetDataIndex(index)), true);
-    }
-    else
-    {
-      return std::pair<float&, bool>(oob_value_, false);
-    }
-  }
-
-  virtual std::pair<float&, bool> GetMutable(const int64_t x_index,
-                                             const int64_t y_index,
-                                             const int64_t z_index)
-  {
-    if (IndexInBounds(x_index, y_index, z_index) && !locked_)
-    {
-      return std::pair<float&, bool>(
-            AccessIndex(GetDataIndex(x_index, y_index, z_index)), true);
-    }
-    else
-    {
-      return std::pair<float&, bool>(oob_value_, false);
-    }
-  }
-
-  virtual bool SetValue3d(const Eigen::Vector3d& location,
-                          const float& value)
-  {
-    const GRID_INDEX index = LocationToGridIndex3d(location);
-    if (IndexInBounds(index))
-    {
-      return SetValue(index, value);
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  virtual bool SetValue4d(const Eigen::Vector4d& location,
-                          const float& value)
-  {
-    const GRID_INDEX index = LocationToGridIndex4d(location);
-    if (IndexInBounds(index))
-    {
-      return SetValue(index, value);
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  virtual bool SetValue(const double x,
-                        const double y,
-                        const double z,
-                        const float& value)
-  {
-    const Eigen::Vector4d location(x, y, z, 1.0);
-    return SetValue4d(location, value);
-  }
-
-  virtual bool SetValue(const GRID_INDEX& index,
-                        const float& value)
-  {
-    if (IndexInBounds(index) && !locked_)
-    {
-      AccessIndex(GetDataIndex(index)) = value;
-      return true;
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  virtual bool SetValue(const int64_t x_index,
-                        const int64_t y_index,
-                        const int64_t z_index,
-                        const float& value)
-  {
-    if (IndexInBounds(x_index, y_index, z_index) && !locked_)
-    {
-      AccessIndex(GetDataIndex(x_index, y_index, z_index)) = value;
-      return true;
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  virtual bool SetValue3d(const Eigen::Vector3d& location,
-                          float&& value)
-  {
-    const GRID_INDEX index = LocationToGridIndex3d(location);
-    if (IndexInBounds(index))
-    {
-      return SetValue(index, value);
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  virtual bool SetValue4d(const Eigen::Vector4d& location,
-                          float&& value)
-  {
-    const GRID_INDEX index = LocationToGridIndex4d(location);
-    if (IndexInBounds(index))
-    {
-      return SetValue(index, value);
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  virtual bool SetValue(const double x,
-                        const double y,
-                        const double z,
-                        float&& value)
-  {
-    const Eigen::Vector4d location(x, y, z, 1.0);
-    return SetValue4d(location, value);
-  }
-
-  virtual bool SetValue(const GRID_INDEX& index,
-                        float&& value)
-  {
-    if (IndexInBounds(index) && !locked_)
-    {
-      AccessIndex(GetDataIndex(index)) = value;
-      return true;
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  virtual bool SetValue(const int64_t x_index,
-                        const int64_t y_index,
-                        const int64_t z_index,
-                        float&& value)
-  {
-    if (IndexInBounds(x_index, y_index, z_index) && !locked_)
-    {
-      AccessIndex(GetDataIndex(x_index, y_index, z_index)) = value;
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    UNUSED(x_index);
+    UNUSED(y_index);
+    UNUSED(z_index);
+    return !locked_;
   }
 
   inline double GetResolution() const { return GetCellSizes().x(); }
@@ -426,14 +238,17 @@ public:
           && (z_index < (GetNumZCells() - 1)))
       {
         const double inv_twice_resolution = 1.0 / (2.0 * GetResolution());
-        const double gx = (GetImmutable(x_index + 1, y_index, z_index).first
-                           - GetImmutable(x_index - 1, y_index, z_index).first)
+        const double gx = (GetImmutable(x_index + 1, y_index, z_index).Value()
+                           - GetImmutable(
+                                x_index - 1, y_index, z_index).Value())
                           * inv_twice_resolution;
-        const double gy = (GetImmutable(x_index, y_index + 1, z_index).first
-                           - GetImmutable(x_index, y_index - 1, z_index).first)
+        const double gy = (GetImmutable(x_index, y_index + 1, z_index).Value()
+                           - GetImmutable(
+                                x_index, y_index - 1, z_index).Value())
                           * inv_twice_resolution;
-        const double gz = (GetImmutable(x_index, y_index, z_index + 1).first
-                           - GetImmutable(x_index, y_index, z_index - 1).first)
+        const double gz = (GetImmutable(x_index, y_index, z_index + 1).Value()
+                           - GetImmutable(
+                                x_index, y_index, z_index - 1).Value())
                           * inv_twice_resolution;
         return std::vector<double>{gx, gy, gz};
       }
@@ -452,11 +267,11 @@ public:
         const int64_t high_z_index = std::min(GetNumZCells() - 1, z_index + 1);
         // Compute the axis increments
         const double x_increment
-            = (high_x_index - low_x_index) * GetResolution();
+            = (double)(high_x_index - low_x_index) * GetResolution();
         const double y_increment
-            = (high_y_index - low_y_index) * GetResolution();
+            = (double)(high_y_index - low_y_index) * GetResolution();
         const double z_increment
-            = (high_z_index - low_z_index) * GetResolution();
+            = (double)(high_z_index - low_z_index) * GetResolution();
         // Compute the gradients for each axis - by default these are zero
         double gx = 0.0;
         double gy = 0.0;
@@ -466,9 +281,9 @@ public:
         {
           const double inv_x_increment = 1.0 / x_increment;
           const double high_x_value
-              = GetImmutable(high_x_index, y_index, z_index).first;
+              = GetImmutable(high_x_index, y_index, z_index).Value();
           const double low_x_value
-              = GetImmutable(low_x_index, y_index, z_index).first;
+              = GetImmutable(low_x_index, y_index, z_index).Value();
           // Compute the gradient
           gx = (high_x_value - low_x_value) * inv_x_increment;
         }
@@ -476,9 +291,9 @@ public:
         {
           const double inv_y_increment = 1.0 / y_increment;
           const double high_y_value
-              = GetImmutable(x_index, high_y_index, z_index).first;
+              = GetImmutable(x_index, high_y_index, z_index).Value();
           const double low_y_value
-              = GetImmutable(x_index, low_y_index, z_index).first;
+              = GetImmutable(x_index, low_y_index, z_index).Value();
           // Compute the gradient
           gy = (high_y_value - low_y_value) * inv_y_increment;
         }
@@ -486,9 +301,9 @@ public:
         {
           const double inv_z_increment = 1.0 / z_increment;
           const double high_z_value
-              = GetImmutable(x_index, y_index, high_z_index).first;
+              = GetImmutable(x_index, y_index, high_z_index).Value();
           const double low_z_value
-              = GetImmutable(x_index, y_index, low_z_index).first;
+              = GetImmutable(x_index, y_index, low_z_index).Value();
           // Compute the gradient
           gz = (high_z_value - low_z_value) * inv_z_increment;
         }
@@ -757,11 +572,10 @@ protected:
                                            const int64_t y_idx,
                                            const int64_t z_idx) const
   {
-    const std::pair<const float&, bool> query
-        = GetImmutable(x_idx, y_idx, z_idx);
-    if (query.second)
+    const auto query = GetImmutable(x_idx, y_idx, z_idx);
+    if (query)
     {
-      const double nominal_sdf_distance = (double)query.first;
+      const double nominal_sdf_distance = (double)query.Value();
       const double cell_center_distance_offset = GetResolution() * 0.5;
       if (nominal_sdf_distance >= 0.0)
       {
