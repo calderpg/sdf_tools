@@ -30,7 +30,7 @@ visualization_msgs::Marker ExportCollisionMapForDisplay(VoxelGrid::VoxelGrid<uin
             for (int64_t z_index = 0; z_index < collision_map.GetNumZCells(); z_index++)
             {
                 // Check if the current cell is in collision
-                uint8_t status = collision_map.GetImmutable(x_index, y_index, z_index).first;
+                uint8_t status = collision_map.GetImmutable(x_index, y_index, z_index).Value();
                 if (status == 1)
                 {
                     // Convert cell indices into a real-world location

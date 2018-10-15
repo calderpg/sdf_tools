@@ -348,7 +348,9 @@ visualization_msgs::Marker CollisionMapGrid::ExportForDisplay(
         new_point.x = location(0);
         new_point.y = location(1);
         new_point.z = location(2);
-        if (GetImmutable(x_index, y_index, z_index).first.occupancy > 0.5)
+        const float occupancy =
+            GetImmutable(x_index, y_index, z_index).Value().occupancy;
+        if (occupancy > 0.5)
         {
           if (collision_color.a > 0.0)
           {
@@ -356,7 +358,7 @@ visualization_msgs::Marker CollisionMapGrid::ExportForDisplay(
             display_rep.colors.push_back(collision_color);
           }
         }
-        else if (GetImmutable(x_index, y_index, z_index).first.occupancy < 0.5)
+        else if (occupancy < 0.5)
         {
           if (free_color.a > 0.0)
           {
@@ -438,7 +440,9 @@ visualization_msgs::Marker CollisionMapGrid::ExportSurfacesForDisplay(
           new_point.x = location(0);
           new_point.y = location(1);
           new_point.z = location(2);
-          if (GetImmutable(x_index, y_index, z_index).first.occupancy > 0.5)
+          const float occupancy =
+              GetImmutable(x_index, y_index, z_index).Value().occupancy;
+          if (occupancy > 0.5)
           {
             if (collision_color.a > 0.0)
             {
@@ -446,8 +450,7 @@ visualization_msgs::Marker CollisionMapGrid::ExportSurfacesForDisplay(
               display_rep.colors.push_back(collision_color);
             }
           }
-          else if (GetImmutable(x_index, y_index, z_index).first.occupancy
-                   < 0.5)
+          else if (occupancy < 0.5)
           {
             if (free_color.a > 0.0)
             {
@@ -529,8 +532,8 @@ CollisionMapGrid::ExportConnectedComponentsForDisplay(
         new_point.y = location(1);
         new_point.z = location(2);
         display_rep.points.push_back(new_point);
-        const COLLISION_CELL current_cell
-            = GetImmutable(x_index, y_index, z_index).first;
+        const COLLISION_CELL& current_cell
+            = GetImmutable(x_index, y_index, z_index).Value();
         if (current_cell.occupancy != 0.5)
         {
           std_msgs::ColorRGBA color
@@ -573,11 +576,9 @@ uint32_t CollisionMapGrid::UpdateConnectedComponents()
   const std::function<bool(const GRID_INDEX&, const GRID_INDEX&)>
     are_connected_fn = [&] (const GRID_INDEX& index1, const GRID_INDEX& index2)
   {
-    auto query1 = GetImmutable(index1);
-    auto query2 = GetImmutable(index2);
-    assert(query1.second);
-    assert(query2.second);
-    if ((query1.first.occupancy > 0.5) == (query2.first.occupancy > 0.5))
+    const auto query1 = GetImmutable(index1);
+    const auto query2 = GetImmutable(index2);
+    if ((query1.Value().occupancy > 0.5) == (query2.Value().occupancy > 0.5))
     {
       return true;
     }
@@ -589,10 +590,10 @@ uint32_t CollisionMapGrid::UpdateConnectedComponents()
   const std::function<int64_t(const GRID_INDEX&)> get_component_fn
       = [&] (const GRID_INDEX& index)
   {
-    auto query = GetImmutable(index);
-    if (query.second)
+    const auto query = GetImmutable(index);
+    if (query)
     {
-      return (int64_t)query.first.component;
+      return (int64_t)query.Value().component;
     }
     else
     {
@@ -603,9 +604,9 @@ uint32_t CollisionMapGrid::UpdateConnectedComponents()
       = [&] (const GRID_INDEX& index, const uint32_t component)
   {
     auto query = GetMutable(index);
-    if (query.second)
+    if (query)
     {
-      SetValue(index, COLLISION_CELL(query.first.occupancy, component));
+      SetValue(index, COLLISION_CELL(query.Value().occupancy, component));
     }
   };
   number_of_components_
@@ -631,10 +632,10 @@ CollisionMapGrid::ComputeComponentTopology(
   const std::function<int64_t(const GRID_INDEX&)> get_component_fn
       = [&] (const GRID_INDEX& index)
   {
-    auto query = GetImmutable(index);
-    if (query.second)
+    const auto query = GetImmutable(index);
+    if (query)
     {
-      return (int64_t)query.first.component;
+      return (int64_t)query.Value().component;
     }
     else
     {
@@ -646,7 +647,7 @@ CollisionMapGrid::ComputeComponentTopology(
   {
     if (ignore_empty_components)
     {
-      const COLLISION_CELL& current_cell = GetImmutable(index).first;
+      const COLLISION_CELL& current_cell = GetImmutable(index).Value();
       if (current_cell.occupancy > 0.5)
       {
         if (IsConnectedComponentSurfaceIndex(index.x, index.y, index.z))
@@ -684,7 +685,7 @@ CollisionMapGrid CollisionMapGrid::Resample(const double new_resolution) const
       for (int64_t z_index = 0; z_index < GetNumZCells(); z_index++)
       {
         const COLLISION_CELL& current_cell
-            = GetImmutable(x_index, y_index, z_index).first;
+            = GetImmutable(x_index, y_index, z_index).Value();
         const Eigen::Vector4d current_cell_location
             = GridIndexToLocation(x_index, y_index, z_index);
         resampled.SetValue4d(current_cell_location, current_cell);
@@ -702,10 +703,10 @@ CollisionMapGrid::ExtractComponentSurfaces(
   const std::function<int64_t(const GRID_INDEX&)> get_component_fn
       = [&] (const GRID_INDEX& index)
   {
-    auto query = GetImmutable(index);
-    if (query.second)
+    const auto query = GetImmutable(index);
+    if (query)
     {
-      return (int64_t)query.first.component;
+      return (int64_t)query.Value().component;
     }
     else
     {
@@ -715,7 +716,7 @@ CollisionMapGrid::ExtractComponentSurfaces(
   const std::function<bool(const GRID_INDEX&)> is_surface_index_fn
       = [&] (const GRID_INDEX& index)
   {
-    const COLLISION_CELL& current_cell = GetImmutable(index).first;
+    const COLLISION_CELL& current_cell = GetImmutable(index).Value();
     if (current_cell.occupancy > 0.5)
     {
       if ((component_types_to_extract & FILLED_COMPONENTS) > 0x00)

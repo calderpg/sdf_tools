@@ -334,7 +334,7 @@ visualization_msgs::Marker SignedDistanceField::ExportForDisplay(
       {
         // Update minimum/maximum distance variables
         const float distance
-            = GetImmutable(x_index, y_index, z_index).first;
+            = GetImmutable(x_index, y_index, z_index).Value();
         if (distance < min_distance)
         {
           min_distance = distance;
@@ -362,20 +362,20 @@ visualization_msgs::Marker SignedDistanceField::ExportForDisplay(
       for (int64_t z_index = 0; z_index < GetNumZCells(); z_index++)
       {
         // Update minimum/maximum distance variables
-        const float distance = GetImmutable(x_index, y_index, z_index).first;
+        const float distance = GetImmutable(x_index, y_index, z_index).Value();
         std_msgs::ColorRGBA new_color;
         new_color.a = arc_helpers::ClampValue(alpha, 0.0f, 1.0f);
         if (distance > 0.0)
         {
           new_color.b = 0.0;
-          new_color.g = (std::abs(distance / max_distance) * 0.8) + 0.2;
+          new_color.g = (float)(std::abs(distance / max_distance) * 0.8) + 0.2f;
           new_color.r = 0.0;
         }
         else if (distance < 0.0)
         {
           new_color.b = 0.0;
           new_color.g = 0.0;
-          new_color.r = (std::abs(distance / min_distance) * 0.8) + 0.2;
+          new_color.r = (float)(std::abs(distance / min_distance) * 0.8) + 0.2f;
         }
         else
         {
@@ -424,7 +424,7 @@ visualization_msgs::Marker SignedDistanceField::ExportForDisplayCollisionOnly(
           {
               // Update minimum/maximum distance variables
               const float distance
-                  = GetImmutable(x_index, y_index, z_index).first;
+                  = GetImmutable(x_index, y_index, z_index).Value();
               if (distance <= 0.0)
               {
                   // Convert SDF indices into a real-world location
@@ -465,7 +465,7 @@ GRID_INDEX SignedDistanceField::GetNextFromGradient(
     const Eigen::Vector3d& gradient) const
 {
   // Check if it's inside an obstacle
-  const float stored_distance = GetImmutable(index).first;
+  const float stored_distance = GetImmutable(index).Value();
   Eigen::Vector3d working_gradient = gradient;
   if (stored_distance < 0.0)
   {
@@ -507,7 +507,7 @@ void SignedDistanceField::FollowGradientsToLocalExtremaUnsafe(
 {
   // First, check if we've already found the local extrema for the current cell
   const Eigen::Vector3d& stored
-      = watershed_map.GetImmutable(x_index, y_index, z_index).first;
+      = watershed_map.GetImmutable(x_index, y_index, z_index).Value();
   if (stored.x() != -std::numeric_limits<double>::infinity()
       && stored.y() != -std::numeric_limits<double>::infinity()
       && stored.z() != -std::numeric_limits<double>::infinity())
@@ -569,7 +569,7 @@ void SignedDistanceField::FollowGradientsToLocalExtremaUnsafe(
       path[current_index] = 1;
       // Check if the new index has already been checked
       const Eigen::Vector3d& new_stored
-          = watershed_map.GetImmutable(current_index).first;
+          = watershed_map.GetImmutable(current_index).Value();
       if (new_stored.x() != -std::numeric_limits<double>::infinity()
           && new_stored.y() != -std::numeric_limits<double>::infinity()
           && new_stored.z() != -std::numeric_limits<double>::infinity())

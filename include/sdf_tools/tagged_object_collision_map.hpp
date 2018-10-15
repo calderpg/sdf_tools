@@ -82,7 +82,7 @@ protected:
     const int64_t min_z_check = std::max((int64_t)0, z_index - 1);
     const int64_t max_z_check = std::min(GetNumZCells() - 1, z_index + 1);
     const float our_occupancy
-      = GetImmutable(x_index, y_index, z_index).first.occupancy;
+      = GetImmutable(x_index, y_index, z_index).Value().occupancy;
     for (int64_t x_idx = min_x_check; x_idx <= max_x_check; x_idx++)
     {
       for (int64_t y_idx = min_y_check; y_idx <= max_y_check; y_idx++)
@@ -93,7 +93,7 @@ protected:
           if ((x_idx != x_index) || (y_idx != y_index) || (z_idx != z_index))
           {
             const float other_occupancy
-              = GetImmutable(x_idx, y_idx, z_idx).first.occupancy;
+              = GetImmutable(x_idx, y_idx, z_idx).Value().occupancy;
             if ((our_occupancy < 0.5) && (other_occupancy >= 0.5))
             {
               return true;
@@ -137,40 +137,40 @@ protected:
     // If the cell is inside the grid, we check the neighbors
     // Note that we must check all 26 neighbors
     const uint32_t our_component
-        = GetImmutable(x_index, y_index, z_index).first.component;
+        = GetImmutable(x_index, y_index, z_index).Value().component;
     // Check neighbor 1
     if (our_component
-        != GetImmutable(x_index, y_index, z_index - 1).first.component)
+        != GetImmutable(x_index, y_index, z_index - 1).Value().component)
     {
       return true;
     }
     // Check neighbor 2
     else if (our_component
-             != GetImmutable(x_index, y_index, z_index + 1).first.component)
+             != GetImmutable(x_index, y_index, z_index + 1).Value().component)
     {
       return true;
     }
     // Check neighbor 3
     else if (our_component
-             != GetImmutable(x_index, y_index - 1, z_index).first.component)
+             != GetImmutable(x_index, y_index - 1, z_index).Value().component)
     {
       return true;
     }
     // Check neighbor 4
     else if (our_component
-             != GetImmutable(x_index, y_index + 1, z_index).first.component)
+             != GetImmutable(x_index, y_index + 1, z_index).Value().component)
     {
       return true;
     }
     // Check neighbor 5
     else if (our_component
-             != GetImmutable(x_index - 1, y_index, z_index).first.component)
+             != GetImmutable(x_index - 1, y_index, z_index).Value().component)
     {
       return true;
     }
     // Check neighbor 6
     else if (our_component
-             != GetImmutable(x_index + 1, y_index, z_index).first.component)
+             != GetImmutable(x_index + 1, y_index, z_index).Value().component)
     {
       return true;
     }
@@ -340,207 +340,16 @@ public:
     return convex_segments_valid_;
   }
 
-  virtual std::pair<TAGGED_OBJECT_COLLISION_CELL&, bool> GetMutable3d(
-      const Eigen::Vector3d& location)
+  virtual bool OnMutableAccess(const int64_t x_index,
+                               const int64_t y_index,
+                               const int64_t z_index)
   {
-    const GRID_INDEX index = LocationToGridIndex3d(location);
-    if (IndexInBounds(index))
-    {
-      return GetMutable(index);
-    }
-    else
-    {
-      return std::pair<TAGGED_OBJECT_COLLISION_CELL&, bool>(oob_value_, false);
-    }
-  }
-
-  virtual std::pair<TAGGED_OBJECT_COLLISION_CELL&, bool> GetMutable4d(
-      const Eigen::Vector4d& location)
-  {
-    const GRID_INDEX index = LocationToGridIndex4d(location);
-    if (IndexInBounds(index))
-    {
-      return GetMutable(index);
-    }
-    else
-    {
-      return std::pair<TAGGED_OBJECT_COLLISION_CELL&, bool>(oob_value_, false);
-    }
-  }
-
-  virtual std::pair<TAGGED_OBJECT_COLLISION_CELL&, bool> GetMutable(
-      const double x, const double y, const double z)
-  {
-    const Eigen::Vector4d location(x, y, z, 1.0);
-    return GetMutable4d(location);
-  }
-
-  virtual std::pair<TAGGED_OBJECT_COLLISION_CELL&, bool> GetMutable(
-      const GRID_INDEX& index)
-  {
-    if (IndexInBounds(index))
-    {
-      components_valid_ = false;
-      return std::pair<TAGGED_OBJECT_COLLISION_CELL&, bool>(
-            AccessIndex(GetDataIndex(index)), true);
-    }
-    else
-    {
-      return std::pair<TAGGED_OBJECT_COLLISION_CELL&, bool>(oob_value_, false);
-    }
-  }
-
-  virtual std::pair<TAGGED_OBJECT_COLLISION_CELL&, bool> GetMutable(
-      const int64_t x_index, const int64_t y_index, const int64_t z_index)
-  {
-    if (IndexInBounds(x_index, y_index, z_index))
-    {
-      components_valid_ = false;
-      return std::pair<TAGGED_OBJECT_COLLISION_CELL&, bool>(
-            AccessIndex(GetDataIndex(x_index, y_index, z_index)), true);
-    }
-    else
-    {
-      return std::pair<TAGGED_OBJECT_COLLISION_CELL&, bool>(oob_value_, false);
-    }
-  }
-
-  virtual bool SetValue3d(const Eigen::Vector3d& location,
-                          const TAGGED_OBJECT_COLLISION_CELL& value)
-  {
-    const GRID_INDEX index = LocationToGridIndex3d(location);
-    if (IndexInBounds(index))
-    {
-      return SetValue(index, value);
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  virtual bool SetValue4d(const Eigen::Vector4d& location,
-                          const TAGGED_OBJECT_COLLISION_CELL& value)
-  {
-    const GRID_INDEX index = LocationToGridIndex4d(location);
-    if (IndexInBounds(index))
-    {
-      return SetValue(index, value);
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  virtual bool SetValue(const double x,
-                        const double y,
-                        const double z,
-                        const TAGGED_OBJECT_COLLISION_CELL& value)
-  {
-    const Eigen::Vector4d location(x, y, z, 1.0);
-    return SetValue4d(location, value);
-  }
-
-  virtual bool SetValue(const GRID_INDEX& index,
-                        const TAGGED_OBJECT_COLLISION_CELL& value)
-  {
-    if (IndexInBounds(index))
-    {
-      components_valid_ = false;
-      AccessIndex(GetDataIndex(index)) = value;
-      return true;
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  virtual bool SetValue(const int64_t x_index,
-                        const int64_t y_index,
-                        const int64_t z_index,
-                        const TAGGED_OBJECT_COLLISION_CELL& value)
-  {
-    if (IndexInBounds(x_index, y_index, z_index))
-    {
-      components_valid_ = false;
-      AccessIndex(GetDataIndex(x_index, y_index, z_index)) = value;
-      return true;
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  virtual bool SetValue3d(const Eigen::Vector3d& location,
-                          TAGGED_OBJECT_COLLISION_CELL&& value)
-  {
-    const GRID_INDEX index = LocationToGridIndex3d(location);
-    if (IndexInBounds(index))
-    {
-      return SetValue(index, value);
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  virtual bool SetValue4d(const Eigen::Vector4d& location,
-                          TAGGED_OBJECT_COLLISION_CELL&& value)
-  {
-    const GRID_INDEX index = LocationToGridIndex4d(location);
-    if (IndexInBounds(index))
-    {
-      return SetValue(index, value);
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  virtual bool SetValue(const double x,
-                        const double y,
-                        const double z,
-                        TAGGED_OBJECT_COLLISION_CELL&& value)
-  {
-    const Eigen::Vector4d location(x, y, z, 1.0);
-    return SetValue4d(location, value);
-  }
-
-  virtual bool SetValue(const GRID_INDEX& index,
-                        TAGGED_OBJECT_COLLISION_CELL&& value)
-  {
-    if (IndexInBounds(index))
-    {
-      components_valid_ = false;
-      AccessIndex(GetDataIndex(index)) = value;
-      return true;
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  virtual bool SetValue(const int64_t x_index,
-                        const int64_t y_index,
-                        const int64_t z_index,
-                        TAGGED_OBJECT_COLLISION_CELL&& value)
-  {
-    if (IndexInBounds(x_index, y_index, z_index))
-    {
-      components_valid_ = false;
-      AccessIndex(GetDataIndex(x_index, y_index, z_index)) = value;
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    UNUSED(x_index);
+    UNUSED(y_index);
+    UNUSED(z_index);
+    components_valid_ = false;
+    convex_segments_valid_ = false;
+    return true;
   }
 
   inline double GetResolution() const { return GetCellSizes().x(); }
@@ -557,7 +366,8 @@ public:
 
   inline std::pair<uint32_t, bool> GetNumConvexSegments() const
   {
-    return std::pair<uint32_t, bool>(number_of_convex_segments_, convex_segments_valid_);
+    return std::pair<uint32_t, bool>(number_of_convex_segments_,
+                                     convex_segments_valid_);
   }
 
   inline std::pair<bool, bool> CheckIfCandidateCorner3d(
@@ -604,51 +414,45 @@ public:
   inline std::pair<bool, bool> CheckIfCandidateCorner(
       const int64_t x_index, const int64_t y_index, const int64_t z_index) const
   {
-    const std::pair<const TAGGED_OBJECT_COLLISION_CELL&, bool> current_cell
-        = GetImmutable(x_index, y_index, z_index);
-    if (current_cell.second)
+    const auto current_cell = GetImmutable(x_index, y_index, z_index);
+    if (current_cell)
     {
+      const auto current_cell_component = current_cell.Value().component;
       // Grab the six neighbors & check if they belong to a different component
       uint32_t different_neighbors = 0u;
-      const std::pair<const TAGGED_OBJECT_COLLISION_CELL&, bool> xm1yz_cell
-          = GetImmutable(x_index - 1, y_index, z_index);
-      if (xm1yz_cell.second
-          && (xm1yz_cell.first.component != current_cell.first.component))
+      const auto xm1yz_cell = GetImmutable(x_index - 1, y_index, z_index);
+      if (xm1yz_cell
+          && (xm1yz_cell.Value().component != current_cell_component))
       {
         different_neighbors++;
       }
-      const std::pair<const TAGGED_OBJECT_COLLISION_CELL&, bool> xp1yz_cell
-          = GetImmutable(x_index + 1, y_index, z_index);
-      if (xp1yz_cell.second
-          && (xp1yz_cell.first.component != current_cell.first.component))
+      const auto xp1yz_cell = GetImmutable(x_index + 1, y_index, z_index);
+      if (xp1yz_cell
+          && (xp1yz_cell.Value().component != current_cell_component))
       {
         different_neighbors++;
       }
-      const std::pair<const TAGGED_OBJECT_COLLISION_CELL&, bool> xym1z_cell
-          = GetImmutable(x_index, y_index - 1, z_index);
-      if (xym1z_cell.second
-          && (xym1z_cell.first.component != current_cell.first.component))
+      const auto xym1z_cell = GetImmutable(x_index, y_index - 1, z_index);
+      if (xym1z_cell
+          && (xym1z_cell.Value().component != current_cell_component))
       {
         different_neighbors++;
       }
-      const std::pair<const TAGGED_OBJECT_COLLISION_CELL&, bool> xyp1z_cell
-          = GetImmutable(x_index, y_index + 1, z_index);
-      if (xyp1z_cell.second
-          && (xyp1z_cell.first.component != current_cell.first.component))
+      const auto xyp1z_cell = GetImmutable(x_index, y_index + 1, z_index);
+      if (xyp1z_cell
+          && (xyp1z_cell.Value().component != current_cell_component))
       {
         different_neighbors++;
       }
-      const std::pair<const TAGGED_OBJECT_COLLISION_CELL&, bool> xyzm1_cell
-          = GetImmutable(x_index, y_index, z_index - 1);
-      if (xyzm1_cell.second
-          && (xyzm1_cell.first.component != current_cell.first.component))
+      const auto xyzm1_cell = GetImmutable(x_index, y_index, z_index - 1);
+      if (xyzm1_cell
+          && (xyzm1_cell.Value().component != current_cell_component))
       {
         different_neighbors++;
       }
-      const std::pair<const TAGGED_OBJECT_COLLISION_CELL&, bool> xyzp1_cell
-          = GetImmutable(x_index, y_index, z_index + 1);
-      if (xyzp1_cell.second
-          && (xyzp1_cell.first.component != current_cell.first.component))
+      const auto xyzp1_cell = GetImmutable(x_index, y_index, z_index + 1);
+      if (xyzp1_cell
+          && (xyzp1_cell.Value().component != current_cell_component))
       {
         different_neighbors++;
       }
@@ -790,10 +594,10 @@ public:
         for (int64_t z_idx = 0; z_idx < combined_sdf.GetNumZCells(); z_idx++)
         {
           const float free_sdf_value
-              = free_sdf_result.first.GetImmutable(x_idx, y_idx, z_idx).first;
+              = free_sdf_result.first.GetImmutable(x_idx, y_idx, z_idx).Value();
           const float named_objects_sdf_value
               = named_objects_sdf_result.first.GetImmutable(
-                  x_idx, y_idx, z_idx).first;
+                  x_idx, y_idx, z_idx).Value();
           if (free_sdf_value >= 0.0)
           {
             combined_sdf.SetValue(x_idx, y_idx, z_idx, free_sdf_value);
@@ -832,18 +636,19 @@ public:
         is_filled_fn = [&] (const GRID_INDEX& index)
     {
       const auto query = GetImmutable(index);
-      if (query.second)
+      if (query)
       {
         // If it matches an object to use OR there are no objects supplied
-        if ((object_use_map[query.first.object_id] == 1)
+        if ((object_use_map[query.Value().object_id] == 1)
             || (objects_to_use.size() == 0))
         {
-          if (query.first.occupancy > 0.5)
+          const float occupancy = query.Value().occupancy;
+          if (occupancy > 0.5)
           {
             // Mark as filled
             return true;
           }
-          else if (unknown_is_filled && (query.first.occupancy == 0.5))
+          else if (unknown_is_filled && (occupancy == 0.5))
           {
             // Mark as filled
             return true;
@@ -906,7 +711,7 @@ public:
         for (int64_t z_index = 0; z_index < GetNumZCells(); z_index++)
         {
           const TAGGED_OBJECT_COLLISION_CELL& cell
-              = GetImmutable(x_index, y_index, z_index).first;
+              = GetImmutable(x_index, y_index, z_index).Value();
           const uint32_t cell_object_id = cell.object_id;
           if (cell_object_id > 0)
           {

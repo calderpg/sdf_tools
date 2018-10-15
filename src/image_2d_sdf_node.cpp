@@ -255,13 +255,13 @@ public:
                 double current_distance = distance_field_[i][j];
                 if (current_distance >= 0.0)
                 {
-                    raw_sdf_image.at<cv::Vec2f>(i,j)[0] = fabs(current_distance);
+                    raw_sdf_image.at<cv::Vec2f>(i,j)[0] = (float)fabs(current_distance);
                     raw_sdf_image.at<cv::Vec2f>(i,j)[1] = 0.0;
                 }
                 else
                 {
                     raw_sdf_image.at<cv::Vec2f>(i,j)[0] = 0.0;
-                    raw_sdf_image.at<cv::Vec2f>(i,j)[1] = fabs(current_distance);
+                    raw_sdf_image.at<cv::Vec2f>(i,j)[1] = (float)fabs(current_distance);
                 }
             }
         }

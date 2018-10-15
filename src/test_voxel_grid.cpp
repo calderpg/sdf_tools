@@ -36,7 +36,7 @@ void test_voxel_grid_indices()
         {
             for (int64_t z_index = 0; z_index < test_grid.GetNumZCells(); z_index++)
             {
-                int ref_val = test_grid.GetImmutable(x_index, y_index, z_index).first;
+                int ref_val = test_grid.GetImmutable(x_index, y_index, z_index).Value();
                 //std::cout << "Value in grid: " << ref_val << " Value should be: " << check_vals[check_index] << std::endl;
                 if (ref_val == check_vals[check_index])
                 {
@@ -88,7 +88,7 @@ void test_voxel_grid_locations()
         {
             for (double z_pos = -9.5; z_pos <= 9.5; z_pos += 1.0)
             {
-                int ref_val = test_grid.GetImmutable(x_pos, y_pos, z_pos).first;
+                int ref_val = test_grid.GetImmutable(x_pos, y_pos, z_pos).Value();
                 //std::cout << "Value in grid: " << ref_val << " Value should be: " << check_vals[check_index] << std::endl;
                 if (ref_val == check_vals[check_index])
                 {
@@ -168,7 +168,7 @@ void test_voxel_grid_serialization()
         {
             for (int64_t z_index = 0; z_index < read_grid.GetNumZCells(); z_index++)
             {
-                int ref_val = read_grid.GetImmutable(x_index, y_index, z_index).first;
+                int ref_val = read_grid.GetImmutable(x_index, y_index, z_index).Value();
                 //std::cout << "Value in grid: " << ref_val << " Value should be: " << check_vals[check_index] << std::endl;
                 if (ref_val == check_vals[check_index])
                 {
